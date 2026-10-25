@@ -26,8 +26,9 @@ Alle relevante bestanden van `agrarix.it` zijn lokaal opgeslagen in deze workspa
 
 ```text
 wennink-eu/
-├── AGENTS.md                                      # Projectrichtlijnen & Proxmox/SSH context
+├── AGENTS.md                                      # Projectrichtlijnen, architectuur & Git/SSH workflow
 ├── README.md                                      # Deze reverse-engineering documentatie
+├── .gitignore                                     # Sluit node_modules/, .cache/ en 98 MB JSON database (AVG/PII) uit van Git
 ├── apache/                                        # Apache 2.4 VirtualHost configuraties van agrarix.it
 │   ├── wennink.conf                               # Poort 80 vhost (permanente redirect naar HTTPS)
 │   └── wennink-le-ssl.conf                        # Poort 443 vhost (Let's Encrypt SSL)
@@ -149,3 +150,13 @@ Om de echte familiedata te laden:
 1. Log in als Admin (`pjheise@gmail.com` / `admin123`) en voer de 5-cijferige TFA-code in die bovenaan in de groene/rode banner verschijnt.
 2. Ga naar het tabblad **Admin** $\rightarrow$ **Importeer Database**.
 3. Selecteer `wennink_family_database_1782248268214.json`.
+
+---
+
+## 7. Git Repository & Synchronisatie
+
+- **GitHub (`origin`)**: [`https://github.com/agrarix/wennink-eu`](https://github.com/agrarix/wennink-eu)
+- **Automation Node (`fabrix`)**: `automation@192.168.178.40:/home/automation/wennink-eu`
+- **Lokale Workspace**: `G:\Mijn Drive\AI-tomation\wennink-eu`
+- **Privacy (`.gitignore`)**: Het 97,9 MB databasebestand (`wennink_family_database_*.json`) staat lokaal op `G:` en wordt via `.gitignore` uitgesloten van Git-commits (i.v.m. GitHub 100 MB limiet en AVG-persoonsgegevens).
+
