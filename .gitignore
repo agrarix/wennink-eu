@@ -1,0 +1,13 @@
+# OS & Cache files
+.DS_Store
+**/.DS_Store
+.cache/
+**/.cache/
+
+# Node dependencies
+node_modules/
+**/node_modules/
+
+# Large family database exports (98 MB + PII / AVG personal data - kept locally on G:)
+wennink_family_database_*.json
+**/wennink_family_database_*.json

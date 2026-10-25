@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Familie Wennink</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- D3.js library CDN for Family Tree -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+
+  <!-- Simulation TFA code banner (Temporary Client-side display for ease of testing) -->
+  <div id="tfaSimulationBanner" class="test-tfa-banner" style="display: none;">
+    <div style="font-weight: 700;">📱 TFA Code Ontvangen / TFA Code Received:</div>
+    <div>Code: <span class="tfa-sim-code" style="font-weight: 700; font-size: 1.1rem; letter-spacing: 2px;"></span></div>
+  </div>
+
+  <!-- Simulation Link banner (Temporary Client-side display for ease of testing invites & password resets) -->
+  <div id="linkSimulationBanner" class="test-tfa-banner" style="display: none; background-color: #e0f2fe; color: #0369a1; border-color: #38bdf8;">
+    <div style="font-weight: 700;" id="linkSimBannerTitle">✉️ E-mail Link Verzonden / Email Link Sent:</div>
+    <div style="word-break: break-all;">Link: <a href="#" class="link-sim-href" style="font-weight: 700; color: #0284c7;"></a></div>
+  </div>
+
+  <div id="appWrapper" class="logged-out">
+    
+    <!-- Standard Header Layout -->
+    <header>
+      <div class="header-container">
+        <div class="header-left">
+          <div id="crestContainer">
+            <!-- Dynamic family crest loads here -->
+          </div>
+          <h1 class="family-title">
+            <span class="ornate-text" data-i18n="title">Familie Wennink</span>
+          </h1>
+        </div>
+
+        <div class="header-right">
+          <!-- Font Size Switcher -->
+          <div class="font-switcher">
+            <button id="fontSizeDecBtn" class="font-btn" title="Smaller font size">A</button>
+            <button id="fontSizeIncBtn" class="font-btn" title="Larger font size">A</button>
+          </div>
+          <!-- Dutch / English Toggle -->
+          <div class="lang-switcher">
+            <button id="langBtnNl" class="lang-btn active" data-lang="nl">NL</button>
+            <button id="langBtnEn" class="lang-btn" data-lang="en">EN</button>
+          </div>
+
+          <!-- Logged in status & logout -->
+          <div class="user-badge-container">
+            <span id="userEmailBadge"></span>
+            <button id="logoutBtn" class="logout-btn" data-i18n="logoutBtn">Uitloggen</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs Menu -->
+    <nav class="main-nav">
+      <div class="nav-container">
+        <ul class="tabs-menu">
+          <li><button class="tab-link active" data-tab="home" data-i18n="tabHome">Home</button></li>
+          <li><button class="tab-link" data-tab="reunions" data-i18n="tabReunions">Reünies</button></li>
+          <li><button class="tab-link" data-tab="albums" data-i18n="tabAlbums">Albums</button></li>
+          <li><button class="tab-link" data-tab="members" data-i18n="tabMembers">Familieleden</button></li>
+          <li><button class="tab-link" data-tab="tree" data-i18n="tabTree">Stamboom</button></li>
+          <li><button class="tab-link" data-tab="historyDoc" data-i18n="tabHistoryDoc">Geschiedenis</button></li>
+          <li id="adminTabLink" style="display:none;"><button class="tab-link" data-tab="admin" data-i18n="tabAdmin">Admin</button></li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main>
+      
+      <!-- 1. HOMEPAGE TAB -->
+      <section id="tab-home" class="tab-content active">
+        <div class="home-grid">
+          <!-- Left Main Column -->
+          <div class="home-main">
+            <div id="homeHistoryCard" class="glass-card clickable-history-card">
+              <h2 data-i18n="historyTitle">Wennink Geschiedenis</h2>
+              <p id="homeHistoryText" style="white-space: pre-wrap; font-size: 1.05rem;"></p>
+            </div>
+            
+            <div class="home-photo-container">
+              <img id="homePhoto" src="" alt="Familiefoto" class="home-photo">
+            </div>
+          </div>
+
+          <!-- Right Sidebar Column -->
+          <div class="home-sidebar">
+            <button id="homeUserGuideBtn" class="btn btn-secondary" style="margin-bottom: 1rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;" data-i18n="userGuideBtn">Gebruiksaanwijzing</button>
+            <div class="glass-card info-box">
+              <span class="info-label" data-i18n="lastReunionHeader">Laatste Reünie</span>
+              <div class="info-val" style="margin-bottom: 1rem;">
+                <span data-i18n="reunionDateText">Datum</span>: <span id="homeLastReunionDate"></span><br>
+                <span data-i18n="reunionLocationText">Plaats</span>: <span id="homeLastReunionPlace"></span>
+              </div>
+
+              <span class="info-label" data-i18n="nextReunionHeader">Volgende Reünie</span>
+              <div class="info-val">
+                <span data-i18n="reunionDateText">Datum</span>: <span id="homeNextReunionDate"></span><br>
+                <span data-i18n="reunionLocationText">Plaats</span>: <span id="homeNextReunionPlace"></span>
+              </div>
+            </div>
+
+            <span class="website-author" data-i18n="websiteBuiltBy">Website gebouwd door Paul Heise</span>
+            <span class="system-timestamp">
+              <span data-i18n="lastUpdated">Laatst bijgewerkt</span>: <span class="last-updated-val"></span>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 2. FAMILY TREE (STAMBOOM) TAB -->
+      <section id="tab-tree" class="tab-content">
+        <div class="glass-card">
+          <h2 data-i18n="treeTitle">Interactieve Stamboom</h2>
+          <p data-i18n="treeHelp" style="margin-bottom:1rem; font-size:0.9rem; color:rgba(0,0,0,0.6);"></p>
+          
+          <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <!-- Tree drawing canvas -->
+            <div class="tree-container-wrapper" style="flex: 1; min-width: 300px;">
+              <div class="tree-controls">
+                <button id="zoomInBtn" class="tree-btn" title="Zoom In">+</button>
+                <button id="zoomOutBtn" class="tree-btn" title="Zoom Out">-</button>
+                <button id="zoomResetBtn" class="tree-btn" title="Reset View">⊙</button>
+              </div>
+              <div id="treeContainer" style="width: 100%; height: 100%;"></div>
+            </div>
+
+            <!-- Detail card drawer on node click -->
+            <div id="treeDetailsPanel" class="glass-card" style="width: 280px; display: none; margin-bottom: 0;">
+              <h3 data-i18n="nodeDetails">Details Familielid</h3>
+              <div id="treeDetailName" style="font-weight: 700; font-size: 1.2rem; margin-bottom: 0.5rem;"></div>
+              <div id="treeDetailDates" style="font-style: italic; color: rgba(0,0,0,0.6); margin-bottom: 1.5rem;"></div>
+              
+              <!-- Admin tree adjustments shortcuts -->
+              <div id="treeAdminActions" style="display: none; flex-direction: column; gap: 0.75rem;">
+                <button id="treeAddChildBtn" class="btn btn-secondary btn-full" data-i18n="addChild">Kind Toevoegen</button>
+                <button id="treeAddSpouseBtn" class="btn btn-secondary btn-full" data-i18n="addSpouse">Partner Toevoegen</button>
+                <button id="treeEditBtn" class="btn btn-primary btn-full" data-i18n="editNode">Wijzig Gegevens</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. FAMILY MEMBERS TAB -->
+      <section id="tab-members" class="tab-content">
+        <div class="glass-card">
+          <div class="members-header">
+            <h2 data-i18n="membersTitle" style="margin-bottom:0; border:none; padding:0;">Ledenlijst</h2>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+              <input type="text" id="memberSearch" class="search-input" placeholder="Zoek lid..." data-i18n-placeholder="search-placeholder">
+              <button id="addMemberBtn" class="btn btn-primary" data-i18n="addMemberBtn">Nieuw Familielid Toevoegen</button>
+            </div>
+          </div>
+
+          <div id="membersList" class="member-list">
+            <!-- Members list outputs alphabetically here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. REUNIONS TAB -->
+      <section id="tab-reunions" class="tab-content">
+        <!-- Main Timeline view -->
+        <div id="reunionTimelineView" class="glass-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
+            <h2 data-i18n="reunionsTitle" style="margin:0; border:none; padding:0;">Reünies Tijdlijn</h2>
+            <button id="addReunionBtn" class="btn btn-primary" data-i18n="addReunionBtn">Reünie Toevoegen</button>
+          </div>
+          
+          <div id="reunionsTimeline" class="timeline-wrapper">
+            <!-- Timeline elements load here -->
+          </div>
+        </div>
+
+        <!-- Reunion details gallery view -->
+        <div id="reunionDetailView" class="glass-card reunion-detail-view">
+          <div class="reunion-info-banner">
+            <div>
+              <button id="backToTimelineBtn" class="btn btn-secondary" style="margin-bottom: 0.5rem;" data-i18n="backToTimeline">Terug</button>
+              <h2 id="reunionDetailTitle" style="margin:0; border:none; padding:0;">Reünie Details</h2>
+              <button id="editReunionDetailsBtn" class="btn btn-secondary" style="display:none; font-size:0.85rem; padding:0.4rem 0.8rem; margin-top:0.25rem;">Wijzig Details / Edit Details</button>
+            </div>
+            
+            <!-- Upload photos & Selection Actions -->
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.5rem;">
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <label for="photoUploadInput" class="btn btn-primary" data-i18n="uploadPhotoBtn">Foto Uploaden</label>
+                <input type="file" id="photoUploadInput" accept="image/*" multiple style="display:none;">
+              </div>
+              <div id="selectionActionsContainer" style="display:flex; gap:0.5rem; justify-content:flex-end; flex-wrap:wrap;">
+                <button id="selectAllPhotosBtn" class="btn btn-secondary" style="font-size:0.85rem; padding:0.4rem 0.8rem; display:none;">Selecteer alles</button>
+                <button id="downloadSelectedPhotosBtn" class="btn btn-primary" style="display:none; font-size:0.85rem; padding:0.4rem 0.8rem;" data-i18n="downloadSelection">Selectie downloaden</button>
+                <button id="deleteSelectedPhotosBtn" class="btn btn-danger" style="display:none; font-size:0.85rem; padding:0.4rem 0.8rem;" data-i18n="deleteSelection">Selectie verwijderen</button>
+              </div>
+            </div>
+          </div>
+
+          <h3 data-i18n="photosHeader">Foto's</h3>
+          <div id="photoGrid" class="photo-grid">
+            <!-- Photos list thumbnail loads here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- 4b. HISTORY DOC TAB -->
+      <section id="tab-historyDoc" class="tab-content">
+        <div class="glass-card" style="margin-bottom: 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem; width: 100%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; flex-wrap: wrap; gap: 1rem;">
+              <h2 data-i18n="historyDocTitle" style="margin: 0;">Geschiedenis</h2>
+              <!-- Admin upload control -->
+              <div id="historyDocAdminControls" style="display: none; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <span style="font-size: 0.95rem; color: var(--text-color); opacity: 0.8;" data-i18n="historyUploadLabel">Upload nieuw bestand (MS-Word .docx of Adobe PDF):</span>
+                <input type="file" id="historyDocUploadInput" accept=".docx,.pdf" style="display: none;">
+                <button class="btn btn-secondary" onclick="document.getElementById('historyDocUploadInput').click()" data-i18n="historyUploadBtn">Selecteer Bestand</button>
+              </div>
+            </div>
+            
+            <!-- Uploaded files list for admin management -->
+            <div id="adminHistoryFilesListContainer" style="display: none; width: 100%; max-width: 600px; padding: 1rem; background: rgba(0,0,0,0.03); border-radius: 12px; margin-top: 0.5rem; border: 1px dashed rgba(0,0,0,0.1);">
+              <div style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-color);" data-i18n="manageUploadedFilesHeader">Beheer geüploade bestanden:</div>
+              <ul id="adminHistoryFilesList" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem;">
+                <!-- Dynamic file items with delete button -->
+              </ul>
+            </div>
+          </div>
+          <hr style="opacity: 0.15; margin-bottom: 1.5rem;">
+          
+          <!-- Table of Contents -->
+          <div id="historyDocTOCContainer" style="display: none; margin-bottom: 2.5rem; padding: 1.2rem; background: rgba(255, 255, 255, 0.4); border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 15px rgba(0,0,0,0.02);">
+            <h3 style="margin-top: 0; margin-bottom: 0.75rem; font-size: 1.15rem;" data-i18n="historyTOCHeader">Inhoudsopgave</h3>
+            <ol id="historyDocTOC" style="margin: 0; padding-left: 1.5rem; line-height: 1.8;">
+              <!-- Dynamic links to sections -->
+            </ol>
+          </div>
+
+          <!-- Document Render list -->
+          <div id="historyDocContent">
+            <p class="no-data" data-i18n="noHistoryDocYet">Er is nog geen geschiedenisdocument geüpload.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. ADMIN SETTINGS TAB -->
+      <section id="tab-admin" class="tab-content">
+        <div class="glass-card">
+          <h2 data-i18n="adminTitle">Beheerder Dashboard</h2>
+          
+          <div class="admin-grid">
+            <!-- Left side: text configurations -->
+            <form id="adminSettingsForm">
+              <div class="admin-section-title" data-i18n="homepageSettings">Homepage Gegevens</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label data-i18n="lastReunionHeader">Laatste Reünie</label>
+                  <input type="text" id="adminLastDate" placeholder="DD-MM-YYYY">
+                </div>
+                <div class="form-group">
+                  <label data-i18n="reunionLocationText">Plaats</label>
+                  <input type="text" id="adminLastPlace">
+                </div>
+                <div class="form-group">
+                  <label data-i18n="nextReunionHeader">Volgende Reünie</label>
+                  <input type="text" id="adminNextDate" placeholder="DD-MM-YYYY">
+                </div>
+                <div class="form-group">
+                  <label data-i18n="reunionLocationText">Plaats</label>
+                  <input type="text" id="adminNextPlace">
+                </div>
+                <div class="form-group form-full-width">
+                  <label data-i18n="labelUserGuideNl">Gebruiksaanwijzing (Nederlands)</label>
+                  <textarea id="adminUserGuideNl" rows="4"></textarea>
+                </div>
+                <div class="form-group form-full-width">
+                  <label data-i18n="labelUserGuideEn">User Guide (English)</label>
+                  <textarea id="adminUserGuideEn" rows="4"></textarea>
+                </div>
+                <div class="form-group form-full-width">
+                  <label data-i18n="labelHistoryNl">Wennink Geschiedenis (Nederlands)</label>
+                  <textarea id="adminHistoryNl" rows="5"></textarea>
+                </div>
+                <div class="form-group form-full-width">
+                  <label data-i18n="labelHistoryEn">Wennink History (English)</label>
+                  <textarea id="adminHistoryEn" rows="5"></textarea>
+                </div>
+              </div>
+
+              <!-- Right side: style customizers -->
+              <div class="admin-section-title" data-i18n="stylingSettings">Styling & Vormgeving</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label data-i18n="primaryColor">Primaire Pastelkleur</label>
+                  <input type="color" id="colorPrimary">
+                </div>
+                <div class="form-group">
+                  <label data-i18n="secondaryColor">Achtergrond Pastelkleur</label>
+                  <input type="color" id="colorSecondary">
+                </div>
+                <div class="form-group">
+                  <label data-i18n="headerColor">Header Achtergrondkleur</label>
+                  <input type="color" id="colorHeader">
+                </div>
+                <div class="form-group">
+                  <label data-i18n="textColor">Tekstkleur</label>
+                  <input type="color" id="colorText">
+                </div>
+                <div class="form-group">
+                  <label data-i18n="bodyFont">Lettertype Tekst</label>
+                  <select id="fontBodySelect">
+                    <option value="Aptos, sans-serif">Aptos (Standaard)</option>
+                    <option value="'Outfit', sans-serif">Outfit</option>
+                    <option value="system-ui, sans-serif">System Sans</option>
+                    <option value="Georgia, serif">Georgia</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label data-i18n="headerFont">Lettertype Header (Sierlijk)</label>
+                  <select id="fontHeaderSelect">
+                    <option value="Playfair Display, serif">Playfair Display (Serif)</option>
+                    <option value="'Tangerine', cursive">Tangerine (Elegant Script)</option>
+                    <option value="Georgia, serif">Georgia</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label data-i18n="fontSize">Lettergrootte</label>
+                  <select id="fontSizeInput">
+                    <option value="14px">14px</option>
+                    <option value="16px">16px (Aanbevolen)</option>
+                    <option value="18px">18px</option>
+                    <option value="20px">20px</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- SMTP configurations -->
+              <div class="admin-section-title" data-i18n="smtpSettings">SMTP Instellingen</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label data-i18n="smtpHostLabel">SMTP Host</label>
+                  <input type="text" id="adminSmtpHost" placeholder="smtp.gmail.com">
+                </div>
+                <div class="form-group">
+                  <label data-i18n="smtpPortLabel">SMTP Poort</label>
+                  <input type="text" id="adminSmtpPort" placeholder="587">
+                </div>
+                <div class="form-group">
+                  <label data-i18n="smtpUserLabel">SMTP Gebruikersnaam</label>
+                  <input type="text" id="adminSmtpUser">
+                </div>
+                <div class="form-group">
+                  <label data-i18n="smtpPassLabel">SMTP Wachtwoord</label>
+                  <input type="password" id="adminSmtpPass">
+                </div>
+                <div class="form-group">
+                  <label data-i18n="smtpFromLabel">Afzender E-mail</label>
+                  <input type="text" id="adminSmtpFrom" placeholder="no-reply@wennink.nl">
+                </div>
+                <div class="checkbox-group form-full-width">
+                  <input type="checkbox" id="adminSmtpSecure">
+                  <label for="adminSmtpSecure" data-i18n="smtpSecureLabel">Gebruik SSL/TLS</label>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="margin-top:1rem;" data-i18n="saveSettingsBtn">Instellingen Opslaan</button>
+            </form>
+
+            <!-- Right Column: Media upload and backup -->
+            <div>
+              <div class="admin-section-title" data-i18n="crestUpload">Upload Familiewapen (SVG/PNG/JPG)</div>
+              <label class="custom-file-upload">
+                <input type="file" id="crestUploadInput" accept="image/*" class="file-input-hidden">
+                <span data-i18n="crestUpload">Kies bestand...</span>
+              </label>
+
+              <div class="admin-section-title" data-i18n="familyPhotoUpload" style="margin-top:2rem;">Familiefoto Homepage Uploaden</div>
+              <label class="custom-file-upload">
+                <input type="file" id="photoUploadHomeInput" accept="image/*" class="file-input-hidden">
+                <span data-i18n="familyPhotoUpload">Kies bestand...</span>
+              </label>
+
+              <!-- Backup & Restore -->
+              <div class="admin-section-title" data-i18n="backupSection" style="margin-top:2rem;">Back-up & Herstel</div>
+              <p data-i18n="backupDesc" style="font-size:0.85rem; color:rgba(0,0,0,0.6);"></p>
+              <div class="backup-controls">
+                <button id="exportDbBtn" class="btn btn-secondary" data-i18n="exportBtn">Exporteer Database</button>
+                <div class="import-wrapper">
+                  <button id="importDbBtn" class="btn btn-secondary" data-i18n="importBtn">Importeer Database</button>
+                  <input type="file" id="importFileInput" accept=".json" class="file-input-hidden">
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. ALBUMS TAB -->
+      <section id="tab-albums" class="tab-content">
+        <!-- List view: Directory of all albums -->
+        <div id="albumsListView" class="glass-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap; gap:1rem;">
+            <h2 data-i18n="albumsTitle" style="margin:0; border:none; padding:0;">Foto albums</h2>
+            <button id="addAlbumBtn" class="btn btn-primary" data-i18n="newAlbumBtn">Nieuw album</button>
+          </div>
+          
+          <div id="albumsGrid" class="albums-grid">
+            <!-- Albums render here alphabetically -->
+          </div>
+        </div>
+
+        <!-- Detail View: Grid of photos in selected album -->
+        <div id="albumDetailView" class="glass-card reunion-detail-view" style="display:none;">
+          <div class="reunion-info-banner">
+            <div>
+              <button id="backToAlbumsBtn" class="btn btn-secondary" style="margin-bottom: 0.5rem;" data-i18n="backToAlbums">Terug naar albums</button>
+              <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+                <h2 id="albumDetailTitle" style="margin:0; border:none; padding:0;">Album Details</h2>
+                <button id="editAlbumNameBtn" class="btn btn-secondary" style="font-size:0.85rem; padding:0.4rem 0.8rem;" data-i18n="editAlbumNameBtnText">Wijzig naam</button>
+                <button id="deleteAlbumBtn" class="btn btn-danger" style="font-size:0.85rem; padding:0.4rem 0.8rem;" data-i18n="deleteAlbumBtnText">Verwijder album</button>
+              </div>
+            </div>
+            
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.5rem;">
+              <div style="display:flex; align-items:center; gap:0.5rem;">
+                <label for="albumPhotoUploadInput" class="btn btn-primary" data-i18n="uploadPhotoBtn">Foto Uploaden</label>
+                <input type="file" id="albumPhotoUploadInput" accept="image/*" multiple style="display:none;">
+              </div>
+              <div id="albumSelectionActionsContainer" style="display:flex; gap:0.5rem; justify-content:flex-end; flex-wrap:wrap;">
+                <button id="selectAllAlbumPhotosBtn" class="btn btn-secondary" style="font-size:0.85rem; padding:0.4rem 0.8rem; display:none;">Selecteer alles</button>
+                <button id="downloadSelectedAlbumPhotosBtn" class="btn btn-primary" style="display:none; font-size:0.85rem; padding:0.4rem 0.8rem;" data-i18n="downloadSelection">Selectie downloaden</button>
+                <button id="deleteSelectedAlbumPhotosBtn" class="btn btn-danger" style="display:none; font-size:0.85rem; padding:0.4rem 0.8rem;" data-i18n="deleteSelection">Selectie verwijderen</button>
+              </div>
+            </div>
+          </div>
+
+          <h3 data-i18n="photosHeader">Foto's</h3>
+          <div id="albumPhotoGrid" class="photo-grid">
+            <!-- Photos list thumbnail loads here -->
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- MODAL DIALOGS OVERLAYS -->
+  <!-- ==================================================== -->
+
+  <!-- 1. LOGIN MODAL -->
+  <div id="loginModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 400px;">
+      <h2 data-i18n="loginTitle" style="text-align: center; margin-bottom: 2rem;">Inloggen</h2>
+      <form id="loginForm">
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label for="loginEmail" data-i18n="email">E-mailadres</label>
+          <input type="email" id="loginEmail" required value="user@wennink.nl">
+        </div>
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label for="loginPass" data-i18n="password">Wachtwoord</label>
+          <input type="password" id="loginPass" required value="user123">
+          <div style="text-align: right; margin-top: 0.5rem;">
+            <a href="#" id="forgotPasswordLink" data-i18n="forgotPasswordLink" style="font-size: 0.8rem; color: var(--header-color); text-decoration: none;">Wachtwoord vergeten?</a>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" data-i18n="loginBtn">Log In</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. TFA MODAL -->
+  <div id="tfaModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 450px;">
+      <h2 data-i18n="tfaTitle">TFA Verificatie</h2>
+      <p data-i18n="tfaDesc" style="font-size: 0.9rem; margin-bottom: 1.5rem;"></p>
+      <div id="tfaStatusMsg" style="margin-bottom: 1.5rem; font-size: 0.9rem; font-weight: 600; text-align: center; padding: 0.5rem; border-radius: 6px;"></div>
+      
+      <form id="tfaForm">
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label for="tfaCodeVal" data-i18n="tfaCode">TFA Code</label>
+          <input type="text" id="tfaCodeVal" pattern="[0-9]{5}" maxLength="5" required style="font-size: 1.5rem; text-align: center; letter-spacing: 4px;">
+        </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="tfaTrustBrowser">
+          <label for="tfaTrustBrowser" data-i18n="trustBrowser">Herken deze browser als veilig</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full" data-i18n="verifyBtn">Verifiëren</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. LOCKOUT / PASSWORD RESET MODAL -->
+  <div id="resetModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 450px;">
+      <h2 data-i18n="resetTitle">Wachtwoord Resetten</h2>
+      <p data-i18n="resetQuestion" style="font-weight: 600; margin-bottom: 1.2rem;"></p>
+      
+      <form id="resetForm">
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label for="resetEmail" data-i18n="email">Gebruikersnaam (E-mailadres)</label>
+          <input type="email" id="resetEmail" required>
+        </div>
+
+        <!-- Strict layout: cancel bottom-left, send bottom-right -->
+        <div class="lockout-actions">
+          <button type="button" id="resetCancelBtn" class="btn btn-secondary" data-i18n="cancelBtn">Annuleren</button>
+          <button type="submit" id="resetSendBtn" class="btn btn-primary" data-i18n="sendBtn">Verzenden</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3.5. SET PASSWORD MODAL (For Invite & Reset Links) -->
+  <div id="setPasswordModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 400px;">
+      <h2 id="setPasswordTitle" class="modal-title" data-i18n="setPasswordTitle">Wachtwoord Instellen</h2>
+      <p id="setPasswordDesc" style="margin-bottom: 1.5rem; font-size: 0.9rem; color: rgba(0,0,0,0.6);"></p>
+      <form id="setPasswordForm">
+        <input type="hidden" id="setPasswordEmail">
+        <input type="hidden" id="setPasswordType"> <!-- 'invite' or 'reset' -->
+        <div class="form-group required" style="margin-bottom: 1.2rem;">
+          <label for="newPassword" data-i18n="newPasswordLabel">Nieuw Wachtwoord</label>
+          <input type="password" id="newPassword" required minlength="6">
+        </div>
+        <div class="form-group required" style="margin-bottom: 1.5rem;">
+          <label for="confirmPassword" data-i18n="confirmPasswordLabel">Bevestig Wachtwoord</label>
+          <input type="password" id="confirmPassword" required minlength="6">
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="setPasswordCancelBtn" class="btn btn-secondary" data-i18n="cancelBtn">Annuleren</button>
+          <button type="submit" class="btn btn-primary" data-i18n="saveBtn">Opslaan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. CONTACT DETAILS POPUP (WIDENED MODAL) -->
+  <div id="memberModal" class="modal-overlay">
+    <div class="modal-content modal-wide">
+      <button class="modal-close">&times;</button>
+      <h2 id="memberPopupTitle" data-i18n="contactPopupTitle">Contactgegevens</h2>
+      <div class="required-indicator" data-i18n="requiredFields">*verplichte velden</div>
+      
+      <form id="memberForm">
+        <input type="hidden" name="memberId">
+        
+        <!-- Row 1: Names -->
+        <div class="form-grid-three">
+          <div class="form-group required">
+            <label for="firstname" data-i18n="firstName">Voornaam</label>
+            <input type="text" id="firstname" required>
+          </div>
+          <div class="form-group">
+            <label for="insertion" data-i18n="insertion">Tussenvoegsel</label>
+            <input type="text" id="insertion">
+          </div>
+          <div class="form-group">
+            <label for="gender" data-i18n="genderLabel">Gender</label>
+            <select id="gender">
+              <option value="" data-i18n="genderPlaceholder">Kies...</option>
+              <option value="man" data-i18n="genderMan">man</option>
+              <option value="vrouw" data-i18n="genderWoman">vrouw</option>
+              <option value="anders" data-i18n="genderOther">anders</option>
+            </select>
+          </div>
+          <div class="form-group form-three-width required">
+            <label for="lastname" data-i18n="lastName">Achternaam</label>
+            <input type="text" id="lastname" required>
+          </div>
+        </div>
+
+        <!-- Row 2: Address -->
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="address1" data-i18n="address1">Adresregel 1</label>
+            <input type="text" id="address1">
+          </div>
+          <div class="form-group">
+            <label for="address2" data-i18n="address2">Adresregel 2</label>
+            <input type="text" id="address2">
+          </div>
+          <div class="form-group">
+            <label for="zip" data-i18n="zip">Postcode</label>
+            <input type="text" id="zip">
+          </div>
+          <div class="form-group">
+            <label for="city" data-i18n="city">Plaats</label>
+            <input type="text" id="city">
+          </div>
+          <div class="form-group">
+            <label for="state" data-i18n="state">Staat / Provincie</label>
+            <input type="text" id="state">
+          </div>
+          <div class="form-group">
+            <label for="country" data-i18n="country">Land</label>
+            <input type="text" id="country">
+          </div>
+        </div>
+
+        <!-- Row 3: Contacts -->
+        <div class="form-grid">
+          <div class="form-group form-full-width">
+            <label for="email" data-i18n="email">E-mailadres</label>
+            <input type="email" id="email" data-i18n-placeholder="placeholderNotAvailable">
+          </div>
+          <div class="form-group">
+            <label for="mobile" data-i18n="mobile">Mobiel nummer</label>
+            <input type="tel" id="mobile" data-i18n-placeholder="placeholderNotAvailable">
+          </div>
+          <div class="form-group">
+            <label for="landline" data-i18n="landline">Vaste lijn</label>
+            <input type="tel" id="landline" data-i18n-placeholder="placeholderNotAvailable">
+          </div>
+        </div>
+
+        <!-- Row 4: Dates -->
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="birthYear" data-i18n="birthYear">Geboortejaar</label>
+            <input type="text" id="birthYear" data-i18n-placeholder="placeholderDateOrYear" placeholder="DD-MM-YYYY of YYYY">
+          </div>
+          <div class="form-group">
+            <label for="deathYear" data-i18n="deathYear">Overlijdensjaar</label>
+            <input type="text" id="deathYear" data-i18n-placeholder="placeholderDateOrYear" placeholder="DD-MM-YYYY of YYYY">
+          </div>
+        </div>
+
+        <!-- Row 5: Tree Availability -->
+        <div class="checkbox-group">
+          <input type="checkbox" id="availableForTree">
+          <label for="availableForTree" data-i18n="availableForTree">Beschikbaar voor stamboom</label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="deleteMemberBtn" class="btn btn-danger" style="margin-right:auto;" data-i18n="deleteBtn">Verwijderen</button>
+          <button type="button" id="inviteMemberBtn" class="btn btn-secondary" style="display: none;" data-i18n="inviteBtn">Uitnodigen</button>
+          <button type="button" class="btn btn-secondary modal-close" data-i18n="cancelBtn">Annuleren</button>
+          <button type="submit" class="btn btn-primary" data-i18n="saveBtn">Opslaan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. TREE NODE ADJUSTMENT MODAL -->
+  <div id="treeNodeModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 450px;">
+      <button class="modal-close">&times;</button>
+      <h2 class="modal-title">Stamboom Aanpassen</h2>
+      
+      <form id="treeNodeForm">
+        <input type="hidden" name="nodeId">
+        
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label for="nodeName" data-i18n="firstName">Volledige Naam</label>
+          <input type="text" id="nodeName" required>
+        </div>
+
+
+
+        <div id="nodeIsSpouseGroup" class="checkbox-group">
+          <input type="checkbox" id="nodeIsSpouse">
+          <label for="nodeIsSpouse" data-i18n="isSpouseCheck">Is dit een partner (geen bloedverwant)?</label>
+        </div>
+
+        <div id="nodeParentSelectGroup" class="form-group" style="margin-bottom: 1.2rem;">
+          <label for="nodeParentSelect" data-i18n="parentSelect">Ouder</label>
+          <select id="nodeParentSelect">
+            <!-- Loads parent nodes dynamically -->
+          </select>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="deleteNodeBtn" class="btn btn-danger" style="margin-right:auto;" data-i18n="deleteNode">Verwijderen</button>
+          <button type="button" class="btn btn-secondary modal-close" data-i18n="cancelBtn">Annuleren</button>
+          <button type="submit" class="btn btn-primary" data-i18n="saveBtn">Opslaan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SELECT MEMBER MODAL -->
+  <div id="selectMemberModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 450px;">
+      <button class="modal-close">&times;</button>
+      <h2 id="selectMemberModalTitle">Lid selecteren</h2>
+      <p id="selectMemberModalDesc" style="font-size: 0.9rem; margin-bottom: 1.2rem; color: var(--text-color); opacity: 0.85;"></p>
+      
+      <div id="selectMemberList" style="max-height: 250px; overflow-y: auto; border: 1px solid rgba(0,0,0,0.15); border-radius: 8px; padding: 0.5rem; background: #fafbfc; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.2rem;">
+        <!-- Dynamically loaded members list -->
+      </div>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary modal-close" style="width: 100%;" data-i18n="cancelBtn">Annuleren</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- USER GUIDE MODAL -->
+  <div id="userGuideModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 600px;">
+      <button class="modal-close">&times;</button>
+      <h2 data-i18n="howToUseHeader" style="margin-bottom: 1.25rem;">Gebruiksaanwijzing</h2>
+      <div id="popupUserGuideText" style="white-space: pre-wrap; font-size: 1.05rem; line-height: 1.6; color: var(--text-color);"></div>
+    </div>
+  </div>
+
+  <!-- 6. ADD REUNION MODAL -->
+  <div id="reunionModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 450px;">
+      <button class="modal-close">&times;</button>
+      <h2 data-i18n="addReunionBtn">Reünie Toevoegen</h2>
+      
+      <form id="reunionForm">
+        <input type="hidden" name="reunionId">
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+          <label for="reunionDate" data-i18n="reunionDateText">Datum</label>
+          <input type="date" id="reunionDate" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label for="reunionPlace" data-i18n="reunionLocationText">Plaats</label>
+          <input type="text" id="reunionPlace" required>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary modal-close" data-i18n="cancelBtn">Annuleren</button>
+          <button type="submit" class="btn btn-primary" data-i18n="saveBtn">Opslaan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- NEW ALBUM MODAL -->
+  <div id="newAlbumModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 450px;">
+      <button class="modal-close">&times;</button>
+      <h2 data-i18n="addAlbumModalTitle">Nieuw Fotoalbum</h2>
+      
+      <form id="newAlbumForm">
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label for="newAlbumName" data-i18n="albumNameLabel">Album Naam</label>
+          <input type="text" id="newAlbumName" required>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary modal-close" data-i18n="cancelBtn">Annuleren</button>
+          <button type="submit" class="btn btn-primary" data-i18n="saveBtn">Opslaan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- RENAME ALBUM MODAL -->
+  <div id="renameAlbumModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 450px;">
+      <button class="modal-close">&times;</button>
+      <h2 data-i18n="renameAlbumModalTitle">Albumnaam Aanpassen</h2>
+      
+      <form id="renameAlbumForm">
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label for="renameAlbumName" data-i18n="albumNameLabel">Album Naam</label>
+          <input type="text" id="renameAlbumName" required>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary modal-close" data-i18n="cancelBtn">Annuleren</button>
+          <button type="submit" class="btn btn-primary" data-i18n="saveBtn">Opslaan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 7. LIGHTBOX MODAL -->
+  <div id="lightboxModal" class="modal-overlay lightbox-overlay">
+    <button id="lightboxClose" class="lightbox-close">&times;</button>
+    <img id="lightboxImg" class="lightbox-img" src="" alt="Lightbox View">
+    <button id="lightboxDownloadBtn" class="lightbox-download" data-i18n="downloadOriginal">Download Origineel</button>
+  </div>
+
+  <!-- mammoth.js for DOCX to HTML conversion -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.11.0/mammoth.browser.min.js"></script>
+  <!-- heic2any library for HEIC/HEIF image conversion -->
+  <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+  <!-- Main Application Script -->
+  <script type="module" src="app.js"></script>
+
+</body>
+</html>
